@@ -1,0 +1,3 @@
+[submodule "BCI-Beats"]
+	path = BCI-Beats
+	url = https://github.com/BCI-Beats-NatHacks/BCI-Beats.git
