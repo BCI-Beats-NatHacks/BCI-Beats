@@ -21,17 +21,36 @@ board = BoardShim(args.board_id, params)
 
 board.prepare_session()
 board.start_stream()
-time.sleep(1)
+
+time.sleep(10)
+# stimuli
+# SAMPLE_SECONDS = 1
+
+# for count, stim in enumerate(stimuli):
+#         print("\tSample " + str(count) + "/" + str(len(stimuli)))
+#         print("\t\t" + class_actions[class_idx][0])
+#         board.insert_marker(stim)
+#         time.sleep(SAMPLE_SECONDS)
+#         print("\t\t" + class_actions[class_idx][1])
+#         #wait SAMPLE_SECONDS for user to perform action
+#         time.sleep(SAMPLE_SECONDS)
+
+
 board.stop_stream()
 data = board.get_board_data() ## (250 Hz @ 1sec) ##
 # board.release_session()
+# print(data, data.shape)
 
 eeg_channels = board.get_eeg_channels(args.board_id)
 sfreq = board.get_sampling_rate(args.board_id)
+# print(sfreq)
 # eeg_names = BoardShim.get_eeg_names(args.board_id)
 
 df = pd.DataFrame(np.transpose(data[:,1:]))
 df_eeg = df[eeg_channels]
+# print(df_eeg.shape)
+# plt.plot(df_eeg)
+# plt.show()
 # df_eeg.columns = eeg_names
 df_eeg.to_csv('data.csv', sep=',', index = False)
 
@@ -39,7 +58,7 @@ df_eeg.to_csv('data.csv', sep=',', index = False)
 
 
 
-def TestPlotter(eeg_data, eeg_channels, sfreq, ch_names, event_codes):
+def TestPlotter(eeg_data, eeg_channels, sfreq, ch_names, event_codes=None):
     '''
     Uses code from Jupyter Lab notebook in CMPUT 624 to do a test plot for raw EEG data coming in
     Params:
@@ -56,35 +75,41 @@ def TestPlotter(eeg_data, eeg_channels, sfreq, ch_names, event_codes):
 
     #plot without any modifications
     raw.plot_psd(average=True)
+    plt.show()
+
 
     # re-referencing and event attaching
     raw.set_eeg_reference(ref_channels='average') # subtract mean from data for re-referencing
-    events = mne.find_events(raw) # find events (mne can look through stim channel, find timings and event codes and return matrix of results)
-    events[:, 2] = event_codes  # add event codes to event structure
+    # # events = mne.find_events(raw) # find events (mne can look through stim channel, find timings and event codes and return matrix of results)
+    # # events[:, 2] = event_codes  # add event codes to event structure
 
-    # filter
-    eeg_run1_filtered = raw.copy().filter(l_freq=0.01, h_freq=100) # bandpass 
+    # # filter
+    eeg_run1_filtered = raw.copy().filter(l_freq=0.01, h_freq=60) # bandpass 
     eeg_run1_filtered = eeg_run1_filtered.notch_filter(freqs=60) # take out 50 hz noise using notch filter
-    eeg_run1_filtered.compute_psd(fmax=120).plot(); 
+    eeg_run1_filtered.compute_psd(fmax=60).plot(); 
+    plt.show()
 
-    # epoching
-    epochs = mne.Epochs(eeg_run1_filtered, events, tmin=-0.1, tmax=0.7, picks=eeg_channels)
-    condition_map = {'closed': 0, 'open': 1}
-    epochs.event_id = condition_map # put events into human readable form
+    # # epoching
+    # epochs = mne.Epochs(eeg_run1_filtered, events, tmin=-0.1, tmax=0.7, picks=eeg_channels)
+    # condition_map = {'closed': 0, 'open': 1}
+    # epochs.event_id = condition_map # put events into human readable form
 
-    # downsample to reduce temporal precision
-    # not needed here because ours is already 250 Hz which is small enough
+    # # downsample to reduce temporal precision
+    # # not needed here because ours is already 250 Hz which is small enough
 
-    # do we need to get rid of baseline? - mne.Epochs does it automatically
+    # # do we need to get rid of baseline? - mne.Epochs does it automatically
 
-    # Averaging (of all trials)
-    open_avg = epochs['open'].average()
-    closed_avg = epochs['closed'].average()
-    open_avg.plot(spatial_colors=True)
-    closed_avg.plot(spatial_colors=True)
+    # # Averaging (of all trials)
+    # open_avg = epochs['open'].average()
+    # closed_avg = epochs['closed'].average()
+    # open_avg.plot(spatial_colors=True)
+    # closed_avg.plot(spatial_colors=True)
 
-    # look at differences between resulting averages
-    open_vs_closed = mne.combine_evoked([open_avg, closed_avg], weights=[1,-1])
-    open_vs_closed.plot(spatial_colors=True)
-    open_vs_closed.plot_joint()
+    # # look at differences between resulting averages
+    # open_vs_closed = mne.combine_evoked([open_avg, closed_avg], weights=[1,-1])
+    # open_vs_closed.plot(spatial_colors=True)
+    # open_vs_closed.plot_joint()
 
+
+
+TestPlotter(df_eeg.T, eeg_channels, sfreq, ['1', '2', '3', '4'])
